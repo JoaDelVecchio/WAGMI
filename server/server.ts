@@ -23,11 +23,12 @@ app.use(logger);
 //MIDDLEWARE PARSER
 app.use(express.json());
 
+//Routes
+app.use("/api/auth", authRouter);
+
 //Error middleware
 app.use(notFound);
 app.use(errorHandler);
-
-app.use("/api/auth", authRouter);
 
 app.listen(PORT, () => {
   console.log("Server running on port", PORT);

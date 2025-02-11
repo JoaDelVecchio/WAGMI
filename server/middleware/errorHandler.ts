@@ -11,7 +11,7 @@ const errorHandler = (
   const message = NODE_ENV === "development" ? err.stack : err.message;
 
   if (err instanceof AppError) {
-    console.error(`[AppError] Status:${err.status} Error:${message}`);
+    console.error(`[AppError] Status:${err.status} ${message}`);
     res.status(err.status).json({ message: err.message });
     return;
   } else if (err instanceof Error) {
