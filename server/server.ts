@@ -1,20 +1,34 @@
-import express from 'express'
-import { PORT } from './config'
-import ConnectDB from './config/data'
-import cors from 'cors'
-import authRouter from './routes/authRoutes'
+import express from "express";
+import cors from "cors";
+import { PORT } from "./config";
+import ConnectDB from "./config/data";
 
-const app = express()
+import notFound from "./middleware/notFound";
+import errorHandler from "./middleware/errorHandler";
+import logger from "./middleware/logger";
+
+import authRouter from "./routes/authRoutes";
+
+const app = express();
 
 //Connect to MongoDB
-ConnectDB()
+ConnectDB();
 
 //CORS POLICY
-app.use(cors())
+app.use(cors());
+
+//Logger
+app.use(logger);
 
 //MIDDLEWARE PARSER
-app.use(express.json())
+app.use(express.json());
 
-app.use('/api/auth',authRouter)
+//Error middleware
+app.use(notFound);
+app.use(errorHandler);
 
-app.listen(PORT,()=>{console.log('Server running on port',PORT)})
+app.use("/api/auth", authRouter);
+
+app.listen(PORT, () => {
+  console.log("Server running on port", PORT);
+});
