@@ -15,7 +15,10 @@ export const getPortfolio = async (
   try {
     if (!portfolioId) throw new AppError("Missing portfolio identifier", 404);
 
-    const portfolio = await PortfolioModel.findById(portfolioId);
+    const portfolio = await PortfolioModel.findById(portfolioId).populate({
+      path: "tokens.tokenId",
+      model: "Token",
+    });
 
     if (!portfolio)
       throw new AppError("There is no portfolio with that Id", 404);
