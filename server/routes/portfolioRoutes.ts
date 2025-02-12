@@ -1,16 +1,13 @@
 import express from "express";
 import {
   getPortfolio,
-  addToken,
-  deleteToken,
   createPortfolio,
 } from "../controllers/portfolioController";
+import verifyToken from "../middleware/verifyToken";
 
 const router = express.Router();
 
-router.get("/:portfolioId", getPortfolio);
-router.post("/", createPortfolio);
-router.post("/:portfolioId", addToken);
-router.delete("/:portfolioId/:tokenId", deleteToken);
+router.get("/:portfolioId", verifyToken, getPortfolio);
+router.post("/", verifyToken, createPortfolio);
 
 export default router;

@@ -1,29 +1,28 @@
-import { Schema, model } from "mongoose";
-import { IPortfolio, IToken } from "../types";
+import { Schema, model, Document, Types } from "mongoose";
 
-const TokenSchema = new Schema<IToken>(
-  {
-    amount: { type: Number, required: true, default: 0 },
-    contract: { type: String, required: true },
-    price: { type: Number, required: true },
-    name: { type: String, required: true },
-    symbol: { type: String, required: true },
-  },
-  { timestamps: true }
-);
+interface IPortfolio extends Document {
+  _id: Types.ObjectId;
+  userId: Types.ObjectId;
+  portfolioName: string;
+  tokens: { tokenId: Types.ObjectId; amount: number }[];
+}
 
 const PortfolioSchema = new Schema<IPortfolio>(
   {
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: [true, "Each portfolio should have an unique User Identifier"],
+      required: true,
     },
     portfolioName: { type: String, required: true },
-    tokens: { type: [TokenSchema] },
+    tokens: [
+      {
+        tokenId: { type: Schema.Types.ObjectId, ref: "Token" },
+        amount: { type: Number, required: true, default: 0 },
+      },
+    ],
   },
   { timestamps: true }
 );
 
-const PortfolioModel = model<IPortfolio>("Portfolio", PortfolioSchema);
-export default PortfolioModel;
+export default model<IPortfolio>("Portfolio", PortfolioSchema);

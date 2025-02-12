@@ -1,6 +1,14 @@
-import { CallbackError, Schema, model } from "mongoose";
-import { IUser } from "../types";
+import { Schema, model, Document, Types } from "mongoose";
 import bcrypt from "bcryptjs";
+
+interface IUser extends Document {
+  username: string;
+  email: string;
+  password: string;
+  portfolios: Types.ObjectId[];
+  comparePassword(candidatePassword: string): Promise<boolean>;
+}
+
 const UserSchema = new Schema<IUser>(
   {
     username: {
@@ -16,6 +24,7 @@ const UserSchema = new Schema<IUser>(
       trim: true,
     },
     password: { type: String, required: [true, "Password is required"] },
+    portfolios: [{ type: Schema.Types.ObjectId, ref: "Portfolio" }],
   },
   { timestamps: true }
 );
@@ -26,7 +35,7 @@ UserSchema.pre("save", async function (next) {
     this.password = await bcrypt.hash(this.password, 10);
     next();
   } catch (error) {
-    next(error as CallbackError);
+    next(error as any);
   }
 });
 
@@ -36,6 +45,4 @@ UserSchema.methods.comparePassword = async function (
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-const UserModel = model<IUser>("User", UserSchema);
-
-export default UserModel;
+export default model<IUser>("User", UserSchema);

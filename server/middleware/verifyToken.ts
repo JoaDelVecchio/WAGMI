@@ -4,7 +4,7 @@ import { JWT_SECRET_KEY } from "../config";
 import jwt from "jsonwebtoken";
 import { IAuthRequest } from "../types";
 
-const verifyToken = (req: Request, res: Response, next: NextFunction) => {
+const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
   const token = req.cookies.token;
   try {
     if (!token) throw new AppError("You are not Authenticated", 403);
