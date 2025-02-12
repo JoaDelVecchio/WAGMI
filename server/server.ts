@@ -8,6 +8,7 @@ import errorHandler from "./middleware/errorHandler";
 import logger from "./middleware/logger";
 
 import authRouter from "./routes/authRoutes";
+import portfolioRouter from "./routes/portfolioRoutes";
 
 const app = express();
 
@@ -25,7 +26,7 @@ app.use(express.json());
 
 //Routes
 app.use("/api/auth", authRouter);
-
+app.use("/api/portfolio", portfolioRouter);
 //Error middleware
 app.use(notFound);
 app.use(errorHandler);
