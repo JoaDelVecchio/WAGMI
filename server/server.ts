@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { PORT } from "./config";
+import { CLIENT_ORIGIN_URL, PORT } from "./config";
 import ConnectDB from "./config/data";
 
 import notFound from "./middleware/notFound";
@@ -18,7 +18,7 @@ const app = express();
 ConnectDB();
 
 //CORS POLICY
-app.use(cors({ credentials: true }));
+app.use(cors({ origin: CLIENT_ORIGIN_URL, credentials: true }));
 
 //Logger
 app.use(logger);

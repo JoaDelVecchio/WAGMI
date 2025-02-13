@@ -10,23 +10,23 @@ export const getPortfolio = async (
   res: Response,
   next: NextFunction
 ) => {
-  const portfolioId = req.params.portfolioId;
+  const userId = req.userId;
 
   try {
-    if (!portfolioId) throw new AppError("Missing portfolio identifier", 404);
+    const user = await User.findById(userId);
 
-    const portfolio = await PortfolioModel.findById(portfolioId).populate({
-      path: "tokens.tokenId",
-      model: "Token",
-    });
+    if (!user) throw new AppError("User does not exist with that id", 404);
+
+    const portfolio = await PortfolioModel.findOne({ userId });
 
     if (!portfolio)
-      throw new AppError("There is no portfolio with that Id", 404);
+      throw new AppError("That user does not have a portfolio", 404);
 
-    console.log("Fetched portfolio successfully");
-    res
-      .status(200)
-      .json({ message: "Fetched portfolio successfully", data: portfolio });
+    console.log("Fetched portfolio successfully", portfolio);
+    res.status(200).json({
+      message: "Fetched portfolio successfully",
+      data: portfolio.toObject(),
+    });
   } catch (error) {
     next(error);
   }
@@ -53,8 +53,6 @@ export const createPortfolio = async (
       userId,
       tokens: [],
     });
-
-    user.portfolios.push(portfolio._id);
 
     await portfolio.save();
     await user.save();

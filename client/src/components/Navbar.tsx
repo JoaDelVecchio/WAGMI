@@ -1,14 +1,39 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContextProvider";
+import { API_BASE_URL } from "../config";
 
 const Navbar = () => {
-  const { currentUser } = useAuthContext();
+  const { currentUser, updateUser } = useAuthContext();
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const handleLogout = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-  const handleLogout = () => {
-    // Add the logout logic here
+      const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message);
+      }
+
+      const data = await response.json();
+      updateUser(data.data);
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (error) return <p className="text-red-500 font-bold">{error}</p>;
 
   return (
     <nav className="bg-transparent py-4 px-6 fixed top-0 left-0 right-0 w-full z-50 shadow-md">
@@ -33,10 +58,10 @@ const Navbar = () => {
             {/* My Profile Link (only visible if logged in) */}
             {currentUser && (
               <Link
-                to="/profile"
+                to="/"
                 className="text-gray-900 hover:text-blue-600 transition duration-300 transform hover:scale-105"
               >
-                My Profile
+                {currentUser.username}
               </Link>
             )}
 
@@ -44,13 +69,13 @@ const Navbar = () => {
             {!currentUser ? (
               <>
                 <Link
-                  to="/login"
+                  to="/profile/login"
                   className="text-gray-900 hover:text-blue-600 transition duration-300 transform hover:scale-105"
                 >
                   Login
                 </Link>
                 <Link
-                  to="/register"
+                  to="/profile/register"
                   className="text-gray-900 hover:text-blue-600 transition duration-300 transform hover:scale-105"
                 >
                   Register
@@ -61,7 +86,7 @@ const Navbar = () => {
                 onClick={handleLogout}
                 className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-all duration-300 transform hover:scale-105"
               >
-                Logout
+                {loading ? "Loggin out" : "Logout"}
               </button>
             )}
           </div>

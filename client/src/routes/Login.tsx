@@ -1,5 +1,5 @@
-import React, { useState, FormEvent, useContext } from "react";
-import { Link } from "react-router-dom";
+import { useState, FormEvent, useContext } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../config";
 import { AuthContext } from "../context/AuthContextProvider";
 
@@ -8,13 +8,13 @@ const Login = () => {
   if (!authContext) throw new Error("AuthContext is not available");
 
   const { updateUser } = authContext;
-
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+  const navigate = useNavigate();
 
   // Handle form input change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,6 +49,8 @@ const Login = () => {
 
       const data = await response.json();
       updateUser(data.data);
+
+      navigate("/");
     } catch (error) {
       setError((error as Error).message);
     } finally {

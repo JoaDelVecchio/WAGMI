@@ -5,7 +5,6 @@ interface IUser extends Document {
   username: string;
   email: string;
   password: string;
-  portfolios: Types.ObjectId[];
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -24,7 +23,6 @@ const UserSchema = new Schema<IUser>(
       trim: true,
     },
     password: { type: String, required: [true, "Password is required"] },
-    portfolios: [{ type: Schema.Types.ObjectId, ref: "Portfolio" }],
   },
   { timestamps: true }
 );

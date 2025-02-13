@@ -32,7 +32,6 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
     const storedUser = localStorage.getItem("user");
     return storedUser ? JSON.parse(storedUser) : null;
   });
-  console.log(currentUser);
 
   const updateUser = (user: IUser) => setCurrentUser(user);
 

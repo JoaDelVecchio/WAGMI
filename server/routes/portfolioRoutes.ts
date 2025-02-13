@@ -7,7 +7,7 @@ import verifyToken from "../middleware/verifyToken";
 
 const router = express.Router();
 
-router.get("/:portfolioId", verifyToken, getPortfolio);
+router.get("/", verifyToken, getPortfolio);
 router.post("/", verifyToken, createPortfolio);
 
 export default router;
