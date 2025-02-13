@@ -1,11 +1,7 @@
-import { useContext } from "react";
-import { AuthContext } from "../context/AuthContextProvider";
+import { useAuthContext } from "../context/AuthContextProvider";
 
 const Home = () => {
-  const authContext = useContext(AuthContext);
-  if (!authContext) throw new Error("AuthContext is not available");
-
-  const { currentUser } = authContext;
+  const { currentUser } = useAuthContext();
 
   return <div>Home {currentUser?.username}</div>;
 };

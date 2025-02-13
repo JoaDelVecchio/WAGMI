@@ -1,4 +1,4 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 interface Portfolios {
   tokenId: string;
@@ -22,6 +22,11 @@ export const AuthContext = createContext<AuthContextType | undefined>(
   undefined,
 );
 
+export const useAuthContext = () => {
+  const authContext = useContext(AuthContext);
+  if (!authContext) throw new Error("AuthContext is not available");
+  return authContext;
+};
 const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<IUser>(() => {
     const storedUser = localStorage.getItem("user");
