@@ -67,7 +67,7 @@ const Login = () => {
             name="email"
             className="w-full p-3 mb-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 hover:scale-105"
             placeholder="Email"
-            value={formData.email}
+            value={formData.email || "testuser@gmail.com"}
             onChange={handleChange}
             required
           />
@@ -76,7 +76,7 @@ const Login = () => {
             name="password"
             className="w-full p-3 mb-6 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 hover:scale-105"
             placeholder="Password"
-            value={formData.password}
+            value={formData.password || "123return"}
             onChange={handleChange}
             required
           />
@@ -85,7 +85,7 @@ const Login = () => {
             type="submit"
             className="w-full p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none transition-all duration-300 transform hover:scale-105"
           >
-            {loading ? "Loggin in..." : "Login"}
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
