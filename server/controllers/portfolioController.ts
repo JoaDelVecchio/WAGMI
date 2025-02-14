@@ -100,7 +100,6 @@ export const getPortfolio = async (
     const portfolio = await PortfolioModel.findOne({ userId }).populate(
       "tokens._id"
     );
-    if (!portfolio) throw new AppError("Portfolio not found", 404);
 
     res
       .status(200)

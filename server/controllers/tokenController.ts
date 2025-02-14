@@ -147,32 +147,41 @@ export const updateTokenAmount = async (
   next: NextFunction
 ) => {
   const { portfolioId, tokenId } = req.params;
-  const { amount } = req.body;
+  let { amount } = req.body;
+
+  console.log("Received amount:", amount); // Debugging
+
+  if (!portfolioId || !tokenId || amount === undefined || amount === null) {
+    return res
+      .status(400)
+      .json({ message: "Missing parameters (portfolioId, tokenId, amount)" });
+  }
+
+  // 🔥 Ensure `amount` is a NUMBER
+  amount = Number(amount);
+  if (isNaN(amount) || amount <= 0) {
+    return res
+      .status(400)
+      .json({ message: "Invalid amount. Must be a positive number." });
+  }
 
   try {
-    if (!portfolioId || !tokenId || amount === undefined) {
-      throw new AppError(
-        "Missing parameters (portfolioId, tokenId, amount)",
-        400
-      );
-    }
-
-    // 🟢 Find Portfolio
     const portfolio = await PortfolioModel.findById(portfolioId);
-    if (!portfolio) throw new AppError("Portfolio not found", 404);
+    if (!portfolio)
+      return res.status(404).json({ message: "Portfolio not found" });
 
-    // 🟢 Find Token in Portfolio
     const token = portfolio.tokens.find((t) => t._id.toString() === tokenId);
-    if (!token) throw new AppError("Token not found in portfolio", 404);
+    if (!token)
+      return res.status(404).json({ message: "Token not found in portfolio" });
 
-    // 🟢 Update Token Amount
-    token.amount = amount;
+    token.amount = amount; // ✅ Now it's guaranteed to be a NUMBER
     await portfolio.save();
 
     res
       .status(200)
       .json({ message: "Token amount updated successfully", data: token });
   } catch (error) {
-    next(error);
+    console.error("Error updating token:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };

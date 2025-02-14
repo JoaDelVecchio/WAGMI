@@ -4,24 +4,8 @@ import { JWT_SECRET_KEY, NODE_ENV } from "../config";
 import { Request, Response, NextFunction } from "express";
 import UserModel from "../models/User";
 import { IAuthRequest } from "../types";
-
-export const getAuthenticatedUser = async (
-  req: IAuthRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const user = await UserModel.findById(req.userId).select("-password");
-    if (!user) {
-      res.status(404).json({ message: "User not found" });
-      return;
-    }
-
-    res.status(200).json({ user });
-  } catch (error) {
-    next(error);
-  }
-};
+import User from "../models/User";
+import bcrypt from "bcryptjs";
 
 export const register = async (
   req: Request,
@@ -49,7 +33,6 @@ export const register = async (
     next(error);
   }
 };
-
 export const login = async (
   req: Request,
   res: Response,
@@ -58,29 +41,24 @@ export const login = async (
   const { email, password } = req.body;
   try {
     if (!email || !password)
-      throw new AppError("Email and/or Password are missing", 400);
+      throw new AppError("Missing fields, try again!", 400);
 
-    const user = await UserModel.findOne({ email });
+    const user = await User.findOne({ email });
     if (!user) throw new AppError("Invalid Credentials", 403);
-
-    const isValid = await user.comparePassword(password);
-    if (!isValid) throw new AppError("Invalid Credentials", 403);
 
     const age = 7 * 24 * 60 * 60 * 1000; // 7 days expiration
     const token = jwt.sign({ id: user._id }, JWT_SECRET_KEY, {
-      expiresIn: age / 1000,
+      expiresIn: age,
     });
 
-    console.log("✅ Logged in successfully, setting cookie...");
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict", //
+    });
 
-    res
-      .cookie("token", token, {
-        httpOnly: true, // ✅ Secure from JavaScript access
-        secure: NODE_ENV === "production", // ✅ Secure mode only in production
-        sameSite: "none", // ✅ Needed for cross-origin requests
-      })
-      .status(200)
-      .json({ message: "User logged in successfully", data: user });
+    res.status(200).json(user);
+    console.log("✅ Logged in successfully");
   } catch (error) {
     next(error);
   }

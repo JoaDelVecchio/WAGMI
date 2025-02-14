@@ -5,7 +5,7 @@ import AppError from "../lib/AppError";
 import { IAuthRequest } from "../types";
 
 const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
-  const token = req.cookies.token; // ✅ Read token from cookies
+  const token = req.cookies.token;
 
   try {
     if (!token) throw new AppError("You are not Authenticated", 403);
