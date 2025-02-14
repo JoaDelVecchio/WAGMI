@@ -1,13 +1,11 @@
-import { useState, FormEvent, useContext } from "react";
+import { useState, FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../config";
-import { AuthContext } from "../context/AuthContextProvider";
+import { useAuthContext } from "../context/AuthContextProvider";
 
 const Login = () => {
-  const authContext = useContext(AuthContext);
-  if (!authContext) throw new Error("AuthContext is not available");
+  const { updateUser } = useAuthContext();
 
-  const { fetchUser } = authContext;
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [formData, setFormData] = useState({
@@ -48,8 +46,9 @@ const Login = () => {
         throw new Error(errorData.message);
       }
 
-      // ✅ Fetch the user to ensure the state updates correctly
-      await fetchUser();
+      const user = await response.json();
+
+      updateUser(user);
       navigate("/");
     } catch (error) {
       setError((error as Error).message);

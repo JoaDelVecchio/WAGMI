@@ -1,70 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { API_BASE_URL } from "../config";
-import { IPortfolio } from "../types";
 import Token from "./Token";
+import { useAuthContext } from "../context/AuthContextProvider";
 
-const Portfolio = ({ portfolio }: { portfolio: IPortfolio }) => {
-  const [tokens, setTokens] = useState(portfolio.tokens);
+const Portfolio = () => {
+  const { portfolio, error, loading, setPortfolio } = useAuthContext();
+  const [tokens, setTokens] = useState<Array<{ _id: any; amount: number }>>(
+    portfolio?.tokens || [],
+  );
   const [newTokenContract, setNewTokenContract] = useState("");
   const [newTokenAmount, setNewTokenAmount] = useState<number>(0);
   const [newTokenChain, setNewTokenChain] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [addingToken, setAddingToken] = useState(false);
 
-  // 🟢 Add Token Function
-  const handleAddToken = async () => {
-    if (!newTokenContract || newTokenAmount <= 0 || !newTokenChain) {
-      setError(
-        "Please enter a valid contract address, amount, and blockchain.",
-      );
-      return;
-    }
+  useEffect(() => {
+    setTokens(portfolio?.tokens || []);
+  }, [portfolio]);
 
-    setError(null);
-    setLoading(true);
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/tokens/${portfolio._id}`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contract: newTokenContract,
-          amount: newTokenAmount,
-          chain: newTokenChain, // ✅ Include blockchain type
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to add token.");
-      }
-
-      const data = await response.json();
-
-      // ✅ Update token list in state
-      setTokens((prevTokens) => [
-        ...prevTokens,
-        { _id: data.data, amount: newTokenAmount },
-      ]);
-
-      // ✅ Reset input fields
-      setNewTokenContract("");
-      setNewTokenAmount(0);
-      setNewTokenChain("");
-    } catch (error) {
-      setError((error as Error).message || "Failed to add token.");
-      console.error("Error adding token:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 🗑️ Delete Token Function
   const handleDeleteToken = async (tokenId: string) => {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/tokens/${portfolio._id}/${tokenId}`,
+        `${API_BASE_URL}/tokens/${portfolio?._id}/${tokenId}`,
         {
           method: "DELETE",
           credentials: "include",
@@ -73,21 +29,38 @@ const Portfolio = ({ portfolio }: { portfolio: IPortfolio }) => {
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message);
+        throw new Error("Failed to delete token");
       }
 
-      // ✅ Update state without reloading
       setTokens((prevTokens) =>
         prevTokens.filter((t) => t._id._id !== tokenId),
       );
+      setPortfolio((prevPortfolio) => {
+        return prevPortfolio
+          ? {
+              ...prevPortfolio,
+              tokens: prevPortfolio.tokens.filter((t) => t._id._id !== tokenId),
+            }
+          : prevPortfolio;
+      });
     } catch (error) {
-      console.error("Failed to delete token:", error);
+      console.error("Error deleting token:", error);
     }
   };
 
-  // ✏️ Update Token Amount Function
-  const handleUpdateAmount = async (tokenId: string, newAmount: number) => {
+  const handleUpdateAmount = async (tokenId: string, newAmount: any) => {
+    if (!portfolio?._id) {
+      console.error("Error: Portfolio ID is missing");
+      return;
+    }
+
+    // 🔥 Ensure the newAmount is a valid number
+    const parsedAmount = Number(newAmount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      console.error("Error: Invalid amount", newAmount);
+      return;
+    }
+
     try {
       const response = await fetch(
         `${API_BASE_URL}/tokens/${portfolio._id}/${tokenId}`,
@@ -95,42 +68,103 @@ const Portfolio = ({ portfolio }: { portfolio: IPortfolio }) => {
           method: "PUT",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ amount: newAmount }),
+          body: JSON.stringify({ amount: parsedAmount }), // ✅ Ensure number format
         },
       );
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message);
+        throw new Error(errorData.message || "Failed to update token amount");
       }
 
-      // ✅ Update state without reloading
+      const updatedToken = await response.json();
+
       setTokens((prevTokens) =>
         prevTokens.map((t) =>
-          t._id._id === tokenId ? { ...t, amount: newAmount } : t,
+          t._id._id === tokenId
+            ? { ...t, amount: updatedToken.data.amount }
+            : t,
         ),
       );
+
+      setPortfolio((prevPortfolio) => {
+        return prevPortfolio
+          ? {
+              ...prevPortfolio,
+              tokens: prevPortfolio.tokens.map((t) =>
+                t._id._id === tokenId
+                  ? { ...t, amount: updatedToken.data.amount }
+                  : t,
+              ),
+            }
+          : prevPortfolio;
+      });
     } catch (error) {
-      console.error("Failed to update token amount:", error);
+      console.error("Error updating token amount:", error);
+    }
+  };
+
+  const handleAddToken = async () => {
+    if (!newTokenContract || newTokenAmount <= 0 || !newTokenChain) return;
+    setAddingToken(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/tokens/${portfolio?._id}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contract: newTokenContract,
+          amount: newTokenAmount,
+          chain: newTokenChain,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to add token.");
+      }
+
+      // ✅ Fetch updated portfolio after adding token
+      const portfolioResponse = await fetch(`${API_BASE_URL}/portfolio`, {
+        method: "GET",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!portfolioResponse.ok) {
+        throw new Error("Failed to fetch portfolio after adding token.");
+      }
+
+      const updatedPortfolio = await portfolioResponse.json();
+      setPortfolio(updatedPortfolio.data); // ✅ Ensure complete data
+
+      setNewTokenContract("");
+      setNewTokenAmount(0);
+      setNewTokenChain("");
+    } catch (error) {
+      console.error("Error adding token:", error);
+    } finally {
+      setAddingToken(false);
     }
   };
 
   return (
-    <div className="bg-white p-8 rounded-xl shadow-lg w-full  mx-auto">
+    <div className="bg-white p-8 rounded-xl shadow-lg w-full mx-auto">
       <h1 className="text-4xl font-bold text-center text-gray-800 mb-8">
-        {portfolio.portfolioName}
+        {portfolio?.portfolioName}
       </h1>
 
       {/* 🟢 Add Token Section */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
+      <div className="bg-white p-6 rounded-lg shadow-md max-w-full">
         <h2 className="text-xl font-bold text-gray-800 mb-4">Add Token</h2>
-
         {error && <p className="text-red-500 mb-2">{error}</p>}
 
         <input
           type="text"
           placeholder="Enter Contract Address / Token ID"
           value={newTokenContract}
+          disabled={loading}
           onChange={(e) => setNewTokenContract(e.target.value)}
           className="w-full px-4 py-2 mb-3 border rounded-md"
         />
@@ -160,23 +194,22 @@ const Portfolio = ({ portfolio }: { portfolio: IPortfolio }) => {
         <button
           onClick={handleAddToken}
           className="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition hover:bg-blue-700"
-          disabled={loading}
+          disabled={addingToken}
         >
-          {loading ? "Adding..." : "Add Token"}
+          {addingToken ? "Adding..." : "Add Token"}
         </button>
       </div>
 
-      {/* 🟠 Error Message */}
-      {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-
       {/* 🟡 Tokens List */}
-      <div className="grid gap-6">
-        {tokens.map((token) => (
+      <div className="grid gap-6 mt-6">
+        {tokens?.map((token, index) => (
           <Token
-            key={token._id._id}
+            key={token._id?._id || index}
             token={token}
-            onDelete={handleDeleteToken}
-            onUpdateAmount={handleUpdateAmount}
+            onDelete={() => handleDeleteToken(token._id._id)}
+            onUpdateAmount={(tokenId, newAmount) =>
+              handleUpdateAmount(tokenId, newAmount)
+            }
           />
         ))}
       </div>

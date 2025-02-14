@@ -12,7 +12,7 @@ interface TokenProps {
 
 const Token = ({ token, onDelete, onUpdateAmount }: TokenProps) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [newAmount, setNewAmount] = useState(token.amount);
+  const [newAmount, setNewAmount] = useState<number>(token.amount);
 
   return (
     <div className="flex flex-wrap md:flex-nowrap items-center justify-between p-6 gap-6 bg-white shadow-md rounded-xl transition-all duration-300 hover:shadow-xl hover:scale-105 border border-gray-200">
@@ -28,7 +28,7 @@ const Token = ({ token, onDelete, onUpdateAmount }: TokenProps) => {
             {token._id.name}
           </h3>
           <p className="text-sm text-gray-500">
-            {token._id.symbol.toUpperCase()}
+            {token._id?.symbol ? token._id.symbol.toUpperCase() : "Unknown"}
           </p>
         </div>
       </div>
@@ -47,12 +47,13 @@ const Token = ({ token, onDelete, onUpdateAmount }: TokenProps) => {
           <input
             type="number"
             value={newAmount}
-            onChange={(e) => setNewAmount(Number(e.target.value))}
+            onChange={(e) => setNewAmount(Number(e.target.value) || 0)} // ✅ Ensure it's always a valid number
             className="w-20 px-2 py-1 text-lg border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
           />
         ) : (
           <p className="text-lg font-semibold text-gray-900">
-            {token.amount.toLocaleString()} {token._id.symbol.toUpperCase()}
+            {token.amount.toLocaleString()}{" "}
+            {token._id?.symbol ? token._id.symbol.toUpperCase() : "Unknown"}
           </p>
         )}
         <p className="text-gray-500 text-sm">Amount</p>
@@ -71,8 +72,11 @@ const Token = ({ token, onDelete, onUpdateAmount }: TokenProps) => {
         {isEditing ? (
           <button
             onClick={() => {
-              onUpdateAmount(token._id._id, newAmount);
-              setIsEditing(false);
+              if (!isNaN(newAmount) && newAmount > 0) {
+                // ✅ Ensures valid number
+                onUpdateAmount(token._id._id, newAmount);
+                setIsEditing(false);
+              }
             }}
             className="px-4 py-1 text-sm font-semibold text-white bg-green-500 rounded-md hover:bg-green-600 transition-all"
           >
