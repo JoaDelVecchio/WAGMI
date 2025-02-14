@@ -152,27 +152,33 @@ export const updateTokenAmount = async (
   console.log("Received amount:", amount); // Debugging
 
   if (!portfolioId || !tokenId || amount === undefined || amount === null) {
-    return res
+    res
       .status(400)
       .json({ message: "Missing parameters (portfolioId, tokenId, amount)" });
+    return;
   }
 
   // 🔥 Ensure `amount` is a NUMBER
   amount = Number(amount);
   if (isNaN(amount) || amount <= 0) {
-    return res
+    res
       .status(400)
       .json({ message: "Invalid amount. Must be a positive number." });
+    return;
   }
 
   try {
     const portfolio = await PortfolioModel.findById(portfolioId);
-    if (!portfolio)
-      return res.status(404).json({ message: "Portfolio not found" });
+    if (!portfolio) {
+      res.status(404).json({ message: "Portfolio not found" });
+      return;
+    }
 
     const token = portfolio.tokens.find((t) => t._id.toString() === tokenId);
-    if (!token)
-      return res.status(404).json({ message: "Token not found in portfolio" });
+    if (!token) {
+      res.status(404).json({ message: "Token not found in portfolio" });
+      return;
+    }
 
     token.amount = amount; // ✅ Now it's guaranteed to be a NUMBER
     await portfolio.save();
