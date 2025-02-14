@@ -21,7 +21,6 @@ const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
 
-  // 🔴 Handle Logout
   const handleLogout = async () => {
     try {
       setLoadingLogout(true);
@@ -34,8 +33,10 @@ const Navbar = () => {
 
       if (!response.ok) throw new Error("Failed to logout");
 
+      localStorage.removeItem("user"); // ✅ Clear user from localStorage
       updateUser(undefined);
-      setPortfolio(undefined);
+      setPortfolio(undefined); // ✅ Ensure portfolio is also cleared
+
       navigate("/profile/login");
     } catch (error) {
       setError((error as Error).message);
