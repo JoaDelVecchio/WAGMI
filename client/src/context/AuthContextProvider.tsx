@@ -22,7 +22,7 @@ export const AuthContext = createContext<{
   error: string | null;
   portfolio: IPortfolio | undefined;
   setPortfolio: React.Dispatch<React.SetStateAction<IPortfolio | undefined>>;
-  fetchPortfolio: () => Promise<void>;
+  refetchPortfolio: () => Promise<void>; // ✅ Add function to manually refetch
 } | null>(null);
 
 export const useAuthContext = () => {
@@ -48,12 +48,12 @@ const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [portfolio, setPortfolio] = useState<IPortfolio | undefined>(undefined);
 
-  // ✅ Fetch portfolio function to use globally
+  // ✅ Fetch portfolio whenever `currentUser` changes
   const fetchPortfolio = async () => {
     if (!currentUser) return;
 
-    setError(null);
     setLoading(true);
+    setError(null);
     try {
       const response = await fetch(`${API_BASE_URL}/portfolio`, {
         method: "GET",
@@ -61,30 +61,31 @@ const AuthContextProvider = ({ children }: { children: ReactNode }) => {
         headers: { "Content-Type": "application/json" },
       });
 
-      if (!response.ok) throw new Error("No portfolio found.");
+      if (!response.ok) {
+        throw new Error("Failed to fetch portfolio");
+      }
 
       const data = await response.json();
       setPortfolio(data.data);
     } catch (error) {
+      console.error("Error fetching portfolio:", error);
       setError((error as Error).message || "Failed to fetch portfolio");
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔥 Automatically fetch portfolio on login
   useEffect(() => {
-    fetchPortfolio();
+    fetchPortfolio(); // 🔥 Fetch portfolio when `currentUser` updates
   }, [currentUser]);
-
-  useEffect(() => {
-    if (portfolio) {
-      console.log("Portfolio updated:", portfolio);
-    }
-  }, [portfolio]);
 
   const updateUser = (updatedUser: User | undefined) => {
     setCurrentUser(updatedUser);
+    if (updatedUser) {
+      fetchPortfolio(); // ✅ Fetch portfolio on login
+    } else {
+      setPortfolio(undefined);
+    }
   };
 
   return (
@@ -96,7 +97,7 @@ const AuthContextProvider = ({ children }: { children: ReactNode }) => {
         loading,
         setPortfolio,
         portfolio,
-        fetchPortfolio, // ✅ Now available globally
+        refetchPortfolio: fetchPortfolio, // ✅ Expose refetch function
       }}
     >
       {children}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContextProvider";
 import { API_BASE_URL } from "../config";
@@ -10,15 +10,18 @@ const Navbar = () => {
     portfolio,
     setPortfolio,
     loading,
-    fetchPortfolio,
+    refetchPortfolio,
   } = useAuthContext();
+
   const [error, setError] = useState<string | null>(null);
   const [loadingLogout, setLoadingLogout] = useState(false);
   const [loadingPortfolio, setLoadingPortfolio] = useState(false);
   const [showInput, setShowInput] = useState(false);
   const [portfolioName, setPortfolioName] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
 
+  // 🔴 Handle Logout
   const handleLogout = async () => {
     try {
       setLoadingLogout(true);
@@ -41,7 +44,38 @@ const Navbar = () => {
     }
   };
 
-  const handleCreatePortfolio = async () => {
+  // ✅ Fetch portfolio when component mounts
+  useEffect(() => {
+    const fetchPortfolio = async () => {
+      if (!currentUser) return; // Avoid fetching if user is not logged in
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/portfolio`, {
+          method: "GET",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (!response.ok) {
+          throw new Error("No portfolio found.");
+        }
+
+        const data = await response.json();
+        setPortfolio(data.data);
+      } catch (error) {
+        console.error("Error fetching portfolio:", error);
+        setPortfolio(undefined); // Ensure state updates correctly
+      }
+    };
+
+    fetchPortfolio();
+  }, [currentUser]);
+
+  const handleCreatePortfolio = () => {
+    setShowInput(true);
+  };
+
+  const handleConfirmCreate = async () => {
     if (!portfolioName.trim()) return;
 
     try {
@@ -61,8 +95,8 @@ const Navbar = () => {
       }
 
       console.log("Portfolio created, refetching...");
-      await fetchPortfolio(); // ✅ Immediately refetch portfolio
-      navigate("/portfolio"); // ✅ Redirect to portfolio page
+      await refetchPortfolio(); // 🔥 Immediately fetch updated portfolio
+
       setShowInput(false);
       setPortfolioName("");
     } catch (error) {
@@ -78,16 +112,78 @@ const Navbar = () => {
         <div className="flex justify-between items-center max-w-screen-xl mx-auto">
           <Link
             to="/"
-            className="text-2xl font-bold text-gray-900 hover:text-blue-600"
+            className="text-2xl font-bold hover:scale-105 duration-300 text-gray-900 hover:text-blue-600"
           >
             WAGMI 🚀
           </Link>
 
           {error && <p className="text-red-500">{error}</p>}
 
+          {/* 🔥 Burger Menu Button */}
+          <button
+            className="lg:hidden text-gray-900 focus:outline-none"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            {menuOpen ? "✖" : "☰"}
+          </button>
+
+          {/* Desktop Navigation */}
+          <div className="hidden lg:flex items-center gap-6">
+            {currentUser && (
+              <span className="text-gray-900 font-semibold hover:scale-105 duration-300">
+                {currentUser.username}
+              </span>
+            )}
+
+            {currentUser && !loading && !portfolio && (
+              <button
+                onClick={handleCreatePortfolio}
+                className="bg-blue-500 text-white py-2 px-4 rounded-md hover:scale-105 duration-300 hover:bg-blue-600"
+                disabled={loadingPortfolio}
+              >
+                {loadingPortfolio ? "Creating..." : "Create Portfolio"}
+              </button>
+            )}
+
+            {!currentUser ? (
+              <>
+                <Link
+                  to="/profile/login"
+                  className="text-gray-900 hover:text-blue-600 hover:scale-105 duration-300"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/profile/register"
+                  className="text-gray-900 hover:text-blue-600 hover:scale-105 duration-300"
+                >
+                  Register
+                </Link>
+              </>
+            ) : (
+              <button
+                onClick={handleLogout}
+                className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 hover:scale-105 duration-300"
+              >
+                {loadingLogout ? "Logging out..." : "Logout"}
+              </button>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {/* 🔥 Mobile Menu */}
+      {menuOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-md z-50 flex flex-col items-center justify-center space-y-4 text-white text-lg">
+          {currentUser && (
+            <span className="text-white font-semibold text-xl">
+              {currentUser.username}
+            </span>
+          )}
+
           {currentUser && !loading && !portfolio && (
             <button
-              onClick={() => setShowInput(true)}
+              onClick={handleCreatePortfolio}
               className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
               disabled={loadingPortfolio}
             >
@@ -95,7 +191,16 @@ const Navbar = () => {
             </button>
           )}
 
-          {currentUser && (
+          {!currentUser ? (
+            <>
+              <Link to="/profile/login" className="hover:text-blue-400">
+                Login
+              </Link>
+              <Link to="/profile/register" className="hover:text-blue-400">
+                Register
+              </Link>
+            </>
+          ) : (
             <button
               onClick={handleLogout}
               className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600"
@@ -103,9 +208,17 @@ const Navbar = () => {
               {loadingLogout ? "Logging out..." : "Logout"}
             </button>
           )}
-        </div>
-      </nav>
 
+          <button
+            className="text-white text-xl mt-4"
+            onClick={() => setMenuOpen(false)}
+          >
+            Close
+          </button>
+        </div>
+      )}
+
+      {/* 🔥 Smooth UI for entering portfolio name */}
       {showInput && (
         <div className="fixed inset-0 flex justify-center items-center bg-black/50 backdrop-blur-md z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-sm transition-all transform animate-fade-in">
@@ -123,7 +236,7 @@ const Navbar = () => {
 
             <div className="flex justify-center gap-4">
               <button
-                onClick={handleCreatePortfolio}
+                onClick={handleConfirmCreate}
                 className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-all"
                 disabled={loadingPortfolio}
               >
@@ -131,7 +244,7 @@ const Navbar = () => {
               </button>
               <button
                 onClick={() => setShowInput(false)}
-                className="bg-gray-500 text-white px-4 py-2 rounded-md"
+                className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-all"
               >
                 Cancel
               </button>
