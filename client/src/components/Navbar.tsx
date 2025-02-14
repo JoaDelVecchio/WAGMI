@@ -11,7 +11,7 @@ const Navbar = () => {
   const [loadingPortfolio, setLoadingPortfolio] = useState(false);
   const [showInput, setShowInput] = useState(false);
   const [portfolioName, setPortfolioName] = useState("");
-  const [menuOpen, setMenuOpen] = useState(false); // ✅ Burger menu state
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -34,6 +34,24 @@ const Navbar = () => {
       setError((error as Error).message);
     } finally {
       setLoadingLogout(false);
+    }
+  };
+
+  // ✅ Function to refetch portfolio after creation
+  const fetchPortfolio = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/portfolio`, {
+        method: "GET",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch portfolio");
+
+      const data = await response.json();
+      setPortfolio(data.data);
+    } catch (error) {
+      console.error("Error fetching portfolio:", error);
     }
   };
 
@@ -60,23 +78,13 @@ const Navbar = () => {
         throw new Error(errorData.message || "Failed to create portfolio");
       }
 
-      const portfolioResponse = await fetch(`${API_BASE_URL}/portfolio`, {
-        method: "GET",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (!portfolioResponse.ok) {
-        throw new Error("Failed to fetch portfolio after creation.");
-      }
-
-      const fullPortfolio = await portfolioResponse.json();
-      setPortfolio(fullPortfolio.data);
+      console.log("Portfolio created, refetching...");
+      await fetchPortfolio(); // ✅ Immediately refetch portfolio
 
       setShowInput(false);
       setPortfolioName("");
     } catch (error) {
-      setError((error as Error).message);
+      console.error("Error creating portfolio:", error);
     } finally {
       setLoadingPortfolio(false);
     }
@@ -97,7 +105,7 @@ const Navbar = () => {
 
           {/* 🔥 Burger Menu Button */}
           <button
-            className="lg:hidden  text-gray-900 focus:outline-none"
+            className="lg:hidden text-gray-900 focus:outline-none"
             onClick={() => setMenuOpen(!menuOpen)}
           >
             {menuOpen ? "✖" : "☰"}
@@ -114,7 +122,7 @@ const Navbar = () => {
             {currentUser && !loading && !portfolio && (
               <button
                 onClick={handleCreatePortfolio}
-                className="bg-blue-500 text-white py-2 px-4 rounded-md hover:scale-105 duration-300  hover:bg-blue-600"
+                className="bg-blue-500 text-white py-2 px-4 rounded-md hover:scale-105 duration-300 hover:bg-blue-600"
                 disabled={loadingPortfolio}
               >
                 {loadingPortfolio ? "Creating..." : "Create Portfolio"}
@@ -125,13 +133,13 @@ const Navbar = () => {
               <>
                 <Link
                   to="/profile/login"
-                  className="text-gray-900 hover:text-blue-600 hover:scale-105 duration-300 "
+                  className="text-gray-900 hover:text-blue-600 hover:scale-105 duration-300"
                 >
                   Login
                 </Link>
                 <Link
                   to="/profile/register"
-                  className="text-gray-900 hover:text-blue-600 hover:scale-105 duration-300 "
+                  className="text-gray-900 hover:text-blue-600 hover:scale-105 duration-300"
                 >
                   Register
                 </Link>
@@ -139,7 +147,7 @@ const Navbar = () => {
             ) : (
               <button
                 onClick={handleLogout}
-                className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 hover:scale-105 duration-300 "
+                className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 hover:scale-105 duration-300"
               >
                 {loadingLogout ? "Logging out..." : "Logout"}
               </button>
@@ -179,7 +187,7 @@ const Navbar = () => {
           ) : (
             <button
               onClick={handleLogout}
-              className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
+              className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600"
             >
               {loadingLogout ? "Logging out..." : "Logout"}
             </button>
@@ -220,7 +228,7 @@ const Navbar = () => {
               </button>
               <button
                 onClick={() => setShowInput(false)}
-                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-all"
+                className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-all"
               >
                 Cancel
               </button>
