@@ -46,6 +46,9 @@ export const login = async (
     const user = await User.findOne({ email });
     if (!user) throw new AppError("Invalid Credentials", 403);
 
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) throw new AppError("Invalid Credentials", 403);
+
     const age = 7 * 24 * 60 * 60 * 1000; // 7 days expiration
     const token = jwt.sign({ id: user._id }, JWT_SECRET_KEY, {
       expiresIn: age,
