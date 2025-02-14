@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContextProvider";
 import { API_BASE_URL } from "../config";
@@ -12,7 +12,6 @@ const Navbar = () => {
   const [showInput, setShowInput] = useState(false);
   const [portfolioName, setPortfolioName] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
-
   const navigate = useNavigate();
 
   // 🔴 Handle Logout
@@ -29,6 +28,7 @@ const Navbar = () => {
       if (!response.ok) throw new Error("Failed to logout");
 
       updateUser(undefined);
+      setPortfolio(undefined);
       navigate("/profile/login");
     } catch (error) {
       setError((error as Error).message);
@@ -37,23 +37,32 @@ const Navbar = () => {
     }
   };
 
-  // ✅ Function to refetch portfolio after creation
-  const fetchPortfolio = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/portfolio`, {
-        method: "GET",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-      });
+  // ✅ Fetch portfolio when component mounts
+  useEffect(() => {
+    const fetchPortfolio = async () => {
+      if (!currentUser) return; // Avoid fetching if user is not logged in
 
-      if (!response.ok) throw new Error("Failed to fetch portfolio");
+      try {
+        const response = await fetch(`${API_BASE_URL}/portfolio`, {
+          method: "GET",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+        });
 
-      const data = await response.json();
-      setPortfolio(data.data);
-    } catch (error) {
-      console.error("Error fetching portfolio:", error);
-    }
-  };
+        if (!response.ok) {
+          throw new Error("No portfolio found.");
+        }
+
+        const data = await response.json();
+        setPortfolio(data.data);
+      } catch (error) {
+        console.error("Error fetching portfolio:", error);
+        setPortfolio(undefined); // Ensure state updates correctly
+      }
+    };
+
+    fetchPortfolio();
+  }, [currentUser]);
 
   const handleCreatePortfolio = () => {
     setShowInput(true);
@@ -78,8 +87,22 @@ const Navbar = () => {
         throw new Error(errorData.message || "Failed to create portfolio");
       }
 
-      console.log("Portfolio created, refetching...");
-      await fetchPortfolio(); // ✅ Immediately refetch portfolio
+      // ✅ Fetch updated portfolio after creation
+      const portfolioResponse = await fetch(`${API_BASE_URL}/portfolio`, {
+        method: "GET",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!portfolioResponse.ok) {
+        throw new Error("Failed to fetch portfolio after creation.");
+      }
+
+      const fullPortfolio = await portfolioResponse.json();
+      setPortfolio(fullPortfolio.data); // ✅ Ensure portfolio updates correctly
+
+      // ✅ Redirect to portfolio page
+      navigate("/portfolio");
 
       setShowInput(false);
       setPortfolioName("");
@@ -114,7 +137,7 @@ const Navbar = () => {
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-6">
             {currentUser && (
-              <span className="text-gray-900 font-semibold hover:scale-105 duration-300 ">
+              <span className="text-gray-900 font-semibold hover:scale-105 duration-300">
                 {currentUser.username}
               </span>
             )}
@@ -236,19 +259,6 @@ const Navbar = () => {
           </div>
         </div>
       )}
-
-      {/* 🔥 Animations */}
-      <style>
-        {`
-          @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-          }
-          .animate-fade-in {
-            animation: fadeIn 0.3s ease-out forwards;
-          }
-        `}
-      </style>
     </>
   );
 };
