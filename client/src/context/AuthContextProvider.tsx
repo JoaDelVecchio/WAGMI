@@ -52,8 +52,8 @@ const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   const fetchPortfolio = async () => {
     if (!currentUser) return;
 
-    setLoading(true);
     setError(null);
+    setLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/portfolio`, {
         method: "GET",
@@ -62,9 +62,8 @@ const AuthContextProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to fetch portfolio");
+        throw new Error("No portfolio found.");
       }
-
       const data = await response.json();
       setPortfolio(data.data);
     } catch (error) {
@@ -79,20 +78,19 @@ const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     fetchPortfolio(); // 🔥 Fetch portfolio when `currentUser` updates
   }, [currentUser]);
 
-  const updateUser = (updatedUser: User | undefined) => {
-    setCurrentUser(updatedUser);
-    if (updatedUser) {
-      fetchPortfolio(); // ✅ Fetch portfolio on login
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem("user", JSON.stringify(currentUser));
     } else {
-      setPortfolio(undefined);
+      localStorage.removeItem("user");
     }
-  };
+  }, [currentUser]);
 
   return (
     <AuthContext.Provider
       value={{
         currentUser,
-        updateUser,
+        updateUser: setCurrentUser,
         error,
         loading,
         setPortfolio,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContextProvider";
 import { API_BASE_URL } from "../config";
@@ -33,10 +33,9 @@ const Navbar = () => {
 
       if (!response.ok) throw new Error("Failed to logout");
 
-      localStorage.removeItem("user"); // ✅ Clear user from localStorage
+      localStorage.removeItem("user"); // ✅ Clear Local Storage
       updateUser(undefined);
-      setPortfolio(undefined); // ✅ Ensure portfolio is also cleared
-
+      setPortfolio(undefined); // ✅ Ensure Portfolio Clears
       navigate("/profile/login");
     } catch (error) {
       setError((error as Error).message);
@@ -44,33 +43,6 @@ const Navbar = () => {
       setLoadingLogout(false);
     }
   };
-
-  // ✅ Fetch portfolio when component mounts
-  useEffect(() => {
-    const fetchPortfolio = async () => {
-      if (!currentUser) return; // Avoid fetching if user is not logged in
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/portfolio`, {
-          method: "GET",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-        });
-
-        if (!response.ok) {
-          throw new Error("No portfolio found.");
-        }
-
-        const data = await response.json();
-        setPortfolio(data.data);
-      } catch (error) {
-        console.error("Error fetching portfolio:", error);
-        setPortfolio(undefined); // Ensure state updates correctly
-      }
-    };
-
-    fetchPortfolio();
-  }, [currentUser]);
 
   const handleCreatePortfolio = () => {
     setShowInput(true);

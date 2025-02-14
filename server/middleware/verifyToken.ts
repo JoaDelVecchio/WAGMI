@@ -5,9 +5,8 @@ import AppError from "../lib/AppError";
 import { IAuthRequest } from "../types";
 
 const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
-  const token = req.cookies.token;
-
   try {
+    const token = req.cookies.token;
     if (!token) throw new AppError("You are not Authenticated", 403);
 
     jwt.verify(
