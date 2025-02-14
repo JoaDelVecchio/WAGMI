@@ -22,6 +22,7 @@ export const AuthContext = createContext<{
   error: string | null;
   portfolio: IPortfolio | undefined;
   setPortfolio: React.Dispatch<React.SetStateAction<IPortfolio | undefined>>;
+  fetchPortfolio: () => Promise<void>;
 } | null>(null);
 
 export const useAuthContext = () => {
@@ -31,7 +32,6 @@ export const useAuthContext = () => {
 };
 
 const AuthContextProvider = ({ children }: { children: ReactNode }) => {
-  // User state
   const [currentUser, setCurrentUser] = useState<User | undefined>(() => {
     const storedUser = localStorage.getItem("user");
     if (!storedUser || storedUser === "undefined") return undefined;
@@ -44,49 +44,44 @@ const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     }
   });
 
-  // Portfolio and fetch states
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [portfolio, setPortfolio] = useState<IPortfolio | undefined>(undefined);
 
-  // Fetch portfolio when user changes
+  // ✅ Fetch portfolio function to use globally
+  const fetchPortfolio = async () => {
+    if (!currentUser) return;
+
+    setError(null);
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/portfolio`, {
+        method: "GET",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!response.ok) throw new Error("No portfolio found.");
+
+      const data = await response.json();
+      setPortfolio(data.data);
+    } catch (error) {
+      setError((error as Error).message || "Failed to fetch portfolio");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🔥 Automatically fetch portfolio on login
   useEffect(() => {
-    const fetchPortfolio = async () => {
-      if (!currentUser) return;
-
-      setError(null);
-      setLoading(true);
-      try {
-        const response = await fetch(`${API_BASE_URL}/portfolio`, {
-          method: "GET",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message);
-        }
-        const data = await response.json();
-        setPortfolio(data.data);
-      } catch (error) {
-        setError((error as Error).message || "Failed to fetch portfolio");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchPortfolio();
   }, [currentUser]);
 
-  // Persist user state in localStorage
   useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem("user", JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem("user");
+    if (portfolio) {
+      console.log("Portfolio updated:", portfolio);
     }
-  }, [currentUser]);
+  }, [portfolio]);
 
   const updateUser = (updatedUser: User | undefined) => {
     setCurrentUser(updatedUser);
@@ -101,6 +96,7 @@ const AuthContextProvider = ({ children }: { children: ReactNode }) => {
         loading,
         setPortfolio,
         portfolio,
+        fetchPortfolio, // ✅ Now available globally
       }}
     >
       {children}
