@@ -6,6 +6,7 @@ export interface IToken extends Document {
   symbol: string;
   name: string;
   price: number;
+  image: string; // ✅ Added Image Field
 }
 
 const TokenSchema = new Schema<IToken>(
@@ -14,6 +15,7 @@ const TokenSchema = new Schema<IToken>(
     symbol: { type: String, required: true, unique: true },
     name: { type: String, required: true },
     price: { type: Number, required: true },
+    image: { type: String, required: true }, // ✅ Added Image Field
   },
   { timestamps: true }
 );

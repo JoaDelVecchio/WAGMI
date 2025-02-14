@@ -30,7 +30,7 @@ app.use(cookieParser());
 //Routes
 app.use("/api/auth", authRouter);
 app.use("/api/portfolio", portfolioRouter);
-app.use("/api/portfolio/tokens", tokenRouter);
+app.use("/api/tokens", tokenRouter);
 
 //Error middleware
 app.use(notFound);

@@ -6,11 +6,11 @@ const MainLayout = () => {
   return !currentUser ? (
     <Navigate to="profile/login" />
   ) : (
-    <div>
+    <div className="flex flex-col min-h-full">
       <header>
         <Navbar />
       </header>
-      <main className="pt-24">
+      <main className="flex flex-grow justify-center items-center pt-20">
         <Outlet />
       </main>
     </div>

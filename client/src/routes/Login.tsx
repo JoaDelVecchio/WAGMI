@@ -7,7 +7,7 @@ const Login = () => {
   const authContext = useContext(AuthContext);
   if (!authContext) throw new Error("AuthContext is not available");
 
-  const { updateUser } = authContext;
+  const { fetchUser } = authContext;
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [formData, setFormData] = useState({
@@ -26,6 +26,7 @@ const Login = () => {
   };
 
   // Handle form submit
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     try {
@@ -35,7 +36,7 @@ const Login = () => {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        credentials: "include", // ✅ Important to receive cookie
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
@@ -47,9 +48,8 @@ const Login = () => {
         throw new Error(errorData.message);
       }
 
-      const data = await response.json();
-      updateUser(data.data);
-
+      // ✅ Fetch the user to ensure the state updates correctly
+      await fetchUser();
       navigate("/");
     } catch (error) {
       setError((error as Error).message);
