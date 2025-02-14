@@ -3,9 +3,8 @@ import { motion } from "framer-motion";
 import Portfolio from "../components/Portfolio";
 import HeroImage from "../assets/HeroImage.png";
 const Home = () => {
-  const { currentUser, loading, error, portfolio } = useAuthContext();
+  const { currentUser, loading, portfolio } = useAuthContext();
   if (loading) return <p className="text-center text-lg">Loading...</p>;
-  if (error) return <p className="text-center text-red-500">{error}</p>;
 
   if (currentUser && portfolio) {
     return (
