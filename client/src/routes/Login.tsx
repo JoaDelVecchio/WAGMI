@@ -66,8 +66,8 @@ const Login = () => {
             type="email"
             name="email"
             className="w-full p-3 mb-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 hover:scale-105"
-            placeholder="Email"
-            value={formData.email || "testuser@gmail.com"}
+            placeholder="Email:testuser@gmail.com"
+            value={formData.email}
             onChange={handleChange}
             required
           />
@@ -75,8 +75,8 @@ const Login = () => {
             type="password"
             name="password"
             className="w-full p-3 mb-6 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 hover:scale-105"
-            placeholder="Password"
-            value={formData.password || "123return"}
+            placeholder="Password: 123"
+            value={formData.password}
             onChange={handleChange}
             required
           />
